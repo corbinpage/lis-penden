@@ -14,9 +14,9 @@
 /.bundle
 
 # Ignore the Secret Google File
-# ./lis-pendens-269934b354f0.p12
+# /lis-pendens-269934b354f0.p12
 
 # Ignore the Secret Keys File
-# ./keys.txt
+# /keys.json
 
 
