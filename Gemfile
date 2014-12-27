@@ -1,10 +1,13 @@
 source 'https://rubygems.org'
 ruby '2.1.2'
 
+# Scraping Data
+gem 'mechanize'
 
-# gem 'rubygems'
-# gem 'google/api_client'
+# Writing to a Google Spreadsheet
+# gem "google/api_client"
 gem 'google_drive'
 
-# gem 'nokogiri'
+# Debugging (Dev Only)
 gem 'pry'
+
