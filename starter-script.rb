@@ -169,46 +169,73 @@ end
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 
-# doc_id = '1t6-1WtYW9AeFf1P3LbgO9-mqO5UpH8tDSNNwoBtyCL0'
+def create_new_entry(tr)
+  new_entry = {}
 
-# session = GoogleDrive.login_with_oauth(access_token)
-# ws = session.spreadsheet_by_key(doc_id).worksheets[0]
-# # puts ws[1, 1]  #==> "hoge"
+  new_entry["Date Posted"] = tr.search("td:nth-child(4)").text
+  # new_entry["Bank"] = bank
+  # new_entry["County"] = county
+  # new_entry["State"] = state
+  # new_entry["Link"] = link
 
-# column_names = ws.list.keys
-
-# # puts column_names
-
-# new_data = {}
-
-# column_names.each_with_index do |n,i|
-#   new_data[n] = i.to_s
-# end
-
-# puts new_data.inspect
-
-# ws.list.push (new_data)
-# ws.save
-
-# ---------------------------------------------------------------
-# ---------------------------------------------------------------
-# ---------------------------------------------------------------
-
-a = Mechanize.new { |agent|
-  agent.user_agent_alias = 'Mac Safari'
-}
-
-a.get('https://www2.miami-dadeclerk.com/officialrecords/Search.aspx') do |page|
-  search_result = page.form_with(:name => 'aspnetForm') do |search|
-    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pfirst_partySTD"] = 'TD Bank'
-  end.click_button
-
-  search_result.links.each do |link|
-    puts link.text
-  end
+  new_entry
 end
 
+def write_list_entry_to_spreadsheet(session, new_entry)
+  doc_id = '1t6-1WtYW9AeFf1P3LbgO9-mqO5UpH8tDSNNwoBtyCL0'
+  worksheet = session.spreadsheet_by_key(doc_id).worksheets[0]
 
+  worksheet.list.push(new_entry)
+  worksheet.save
+end
+
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+
+
+
+agent = Mechanize.new { |a|
+  a.user_agent_alias = 'Mac Safari'
+}
+agent.read_timeout = 300
+
+
+agent.get('https://www2.miami-dadeclerk.com/officialrecords/Search.aspx') do |page|
+  search_result_page = page.form_with(:name => 'aspnetForm') do |search|
+    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pfirst_partySTD"] = 'Bank'
+    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$prec_date_fromSTD"] = '12/1/2014'
+    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pdoc_typeSTD"] = 'LIS'
+  end.click_button(page.form_with(:name => 'aspnetForm').submits[0])
+
+  tr_array = search_result_page.search("table.gvResults tr")
+  tr_count = tr_array.count
+
+  tr_array.each_with_index do |tr, i|
+    if i != 0 && i != tr_count
+      new_entry = create_new_entry(tr)
+      session = GoogleDrive.login_with_oauth(access_token)
+
+      write_list_entry_to_spreadsheet(session, new_entry)
+    end
+  end
+
+
+
+
+
+
+
+  # binding.pry
+
+  # search_result.links.each do |link|
+  #   puts link.text
+  # end
+end
+
+# form.buttons_with(:value => /submit/).each do |button|
+#   button.value = 'hello!'
+# end
 
 
 
@@ -236,20 +263,5 @@ end
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
