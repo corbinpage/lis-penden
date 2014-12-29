@@ -169,14 +169,17 @@ end
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 
-def create_new_entry(tr)
+def create_new_entry(tr, county, state)
   new_entry = {}
 
+  binding.pry
+
+  new_entry["Clerk File Number"] = tr.search("td:nth-child(2) a").text
+  new_entry["Link"] = tr.search("td:nth-child(2) a").attr('href').value
   new_entry["Date Posted"] = tr.search("td:nth-child(4)").text
-  # new_entry["Bank"] = bank
-  # new_entry["County"] = county
-  # new_entry["State"] = state
-  # new_entry["Link"] = link
+  new_entry["First Party"] = tr.search("td:nth-child(10) span:first").text
+  new_entry["County"] = county
+  new_entry["State"] = state
 
   new_entry
 end
@@ -213,8 +216,10 @@ agent.get('https://www2.miami-dadeclerk.com/officialrecords/Search.aspx') do |pa
 
   tr_array.each_with_index do |tr, i|
     if i != 0 && i != tr_count
-      new_entry = create_new_entry(tr)
+      new_entry = create_new_entry(tr, "Dade", "FL")
       session = GoogleDrive.login_with_oauth(access_token)
+
+      # binding.pry
 
       write_list_entry_to_spreadsheet(session, new_entry)
     end
