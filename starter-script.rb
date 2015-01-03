@@ -172,12 +172,11 @@ end
 def create_new_entry(tr, county, state)
   new_entry = {}
 
-  binding.pry
-
   new_entry["Clerk File Number"] = tr.search("td:nth-child(2) a").text
-  new_entry["Link"] = tr.search("td:nth-child(2) a").attr('href').value
+  # new_entry["Link"] = tr.search("td:nth-child(2) a").attr('href').value
   new_entry["Date Posted"] = tr.search("td:nth-child(4)").text
   new_entry["First Party"] = tr.search("td:nth-child(10) span:first").text
+  new_entry["Date Added"] = Time.now 
   new_entry["County"] = county
   new_entry["State"] = state
 
@@ -205,65 +204,33 @@ agent.read_timeout = 300
 
 
 agent.get('https://www2.miami-dadeclerk.com/officialrecords/Search.aspx') do |page|
+  puts "Initial Connection made.."
   search_result_page = page.form_with(:name => 'aspnetForm') do |search|
     search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pfirst_partySTD"] = 'Bank'
     search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$prec_date_fromSTD"] = '12/1/2014'
-    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pdoc_typeSTD"] = 'LIS'
+    search["ctl00$ContentPlaceHolder1$tcStandar$tpNameSearch$pdoc_typeSTD"] = 'LIS'    
+    puts "Form filled out.."
   end.click_button(page.form_with(:name => 'aspnetForm').submits[0])
 
+  puts "Results present.."
   tr_array = search_result_page.search("table.gvResults tr")
-  tr_count = tr_array.count
 
+  # until tr_array.empty? 
   tr_array.each_with_index do |tr, i|
-    if i != 0 && i != tr_count
+    puts i
+    unless i == 0 || i == tr_array.count-1
       new_entry = create_new_entry(tr, "Dade", "FL")
       session = GoogleDrive.login_with_oauth(access_token)
-
-      # binding.pry
-
       write_list_entry_to_spreadsheet(session, new_entry)
     end
   end
 
-
-
-
-
-
-
-  # binding.pry
-
-  # search_result.links.each do |link|
-  #   puts link.text
+    # binding.pry
+    # search_result_page = agent.search_result_page.link_with(:text => 'NEXT PAGE').click
+    # tr_array = search_result_page.search("table.gvResults tr")
   # end
+
 end
-
-# form.buttons_with(:value => /submit/).each do |button|
-#   button.value = 'hello!'
-# end
-
-
-
-
-
-# ---------------------------------------------------------------
-# ---------------------------------------------------------------
-# ---------------------------------------------------------------
-
-# a = Mechanize.new { |agent|
-#   agent.user_agent_alias = 'Mac Safari'
-# }
-
-# a.get('http://google.com/') do |page|
-#   search_result = page.form_with(:name => 'f') do |search|
-#     binding.pry
-#     search.q = 'Hello world'
-#   end.submit
-
-#   search_result.links.each do |link|
-#     puts link.text
-#   end
-# end
 
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
