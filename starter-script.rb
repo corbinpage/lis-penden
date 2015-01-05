@@ -217,7 +217,6 @@ agent.get('https://www2.miami-dadeclerk.com/officialrecords/Search.aspx') do |pa
 
   # until tr_array.empty? 
   tr_array.each_with_index do |tr, i|
-    puts i
     unless i == 0 || i == tr_array.count-1
       new_entry = create_new_entry(tr, "Dade", "FL")
       session = GoogleDrive.login_with_oauth(access_token)
