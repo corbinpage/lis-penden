@@ -11,6 +11,42 @@ require "pry"
 # ---------------------------------------------------------------
 # ---------------------------------------------------------------
 
+begin
+
+  secrets = JSON[File.read("./keys.json")]
+
+
+  service_account_email = secrets['service_account_email']
+  key_file = secrets['key_file']
+  key_secret = secrets['key_secret']
+  user_email = 'corbin.page@gmail.com'
+
+  # Authorize and get key
+  key = Google::APIClient::PKCS12.load_key(key_file, key_secret)
+
+  # Get the Google API client
+  client = Google::APIClient.new(:application_name => 'lis-pendens', 
+                                 :application_version => '0.01')
+
+  client.authorization = Signet::OAuth2::Client.new(
+                                                    :token_credential_uri => 'https://accounts.google.com/o/oauth2/token',
+                                                    :audience => 'https://accounts.google.com/o/oauth2/token',
+                                                    :scope => "https://www.googleapis.com/auth/drive " +
+                                                    "https://docs.google.com/feeds/ " +
+                                                    "https://docs.googleusercontent.com/ " +
+                                                    "https://spreadsheets.google.com/feeds/",
+                                                    :issuer => service_account_email,
+                                                    :signing_key => key)
+
+  client.authorization.fetch_access_token!
+  access_token = client.authorization.access_token
+
+  session = GoogleDrive.login_with_oauth(access_token)
+
+rescue
+  puts "Failed to connect to Google Docs."
+end
+
 def create_new_entry(tr, county, state)
   new_entry = {}
 
@@ -62,20 +98,24 @@ select("LIS PENDENS - LIS", from: "ctl00_ContentPlaceHolder1_tcStandar_tpNameSea
 
 begin
   click_button("ctl00_ContentPlaceHolder1_tcStandar_tpNameSearch_btnNameSearch")
-  select("400", from: "ctl00_ContentPlaceHolder1_gvResults_ctl13_ddlPageSize")
-  puts "Got Results.."
-rescue Net::ReadTimeout
-  puts "Timed out"
-end
+  # select("400", from: "ctl00_ContentPlaceHolder1_gvResults_ctl13_ddlPageSize")
+  puts "Got to the Results Page.."
 
-tr_array = all("table.gvResults tr")
+  tr_array = all("table.gvResults tr")
 
+  unless tr_array.nil?
 
-tr_array.each_with_index do |tr, i|
-  unless i == 0 || i == tr_array.count-1
-    new_entry = create_new_entry(tr, "Dade", "FL")
-    # session = GoogleDrive.login_with_oauth(access_token)
-    session = nil
-    write_list_entry_to_spreadsheet(session, new_entry)
+    tr_array.each_with_index do |tr, i|
+      unless i == 0 || i == tr_array.count-1
+        new_entry = create_new_entry(tr, "Dade", "FL")
+        write_list_entry_to_spreadsheet(session, new_entry)
+      end
+    end
+
+  else
+    puts "No results found.."
   end
+
+rescue Net::ReadTimeout
+  puts "Connection Timed out"
 end
