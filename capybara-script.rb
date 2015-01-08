@@ -61,15 +61,16 @@ def create_new_entry(tr, county, state)
   new_entry
 end
 
-def write_list_entry_to_spreadsheet(session, new_entry)
+def get_lis_pendens_worksheet(session)
   doc_id = '1t6-1WtYW9AeFf1P3LbgO9-mqO5UpH8tDSNNwoBtyCL0'
-  if session.nil?
-    puts "Google Docs connection failed.."
-    puts "Entry data will not be written.."
+  session.nil? ? nil : session.spreadsheet_by_key(doc_id).worksheets[0]
+end
+
+def write_list_entry_to_worksheet(worksheet, new_entry)
+  if worksheet.nil?
     puts new_entry.inspect
     false
   else
-    worksheet = session.spreadsheet_by_key(doc_id).worksheets[0]
     worksheet.list.push(new_entry)
     worksheet.save
   end
@@ -104,11 +105,12 @@ begin
   tr_array = all("table.gvResults tr")
 
   unless tr_array.nil?
+    worksheet = get_lis_pendens_worksheet(session)
 
     tr_array.each_with_index do |tr, i|
       unless i == 0 || i == tr_array.count-1
         new_entry = create_new_entry(tr, "Dade", "FL")
-        write_list_entry_to_spreadsheet(session, new_entry)
+        write_list_entry_to_worksheet(worksheet, new_entry)
       end
     end
 
